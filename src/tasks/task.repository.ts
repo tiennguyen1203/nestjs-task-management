@@ -1,8 +1,8 @@
 import { NotFoundException } from '@nestjs/common';
-import { CreateTaskDto } from './dto/create-task.dto';
-import { Task } from './task.entity';
 import { DeleteResult, EntityRepository, Repository } from "typeorm";
+import { CreateTaskDto } from './dto/create-task.dto';
 import { TaskStatus } from './task-status.enum';
+import { Task } from './task.entity';
 
 
 @EntityRepository(Task)
@@ -33,5 +33,17 @@ export class TaskRepository extends Repository<Task> {
     }
 
     return id;
+  }
+
+  async updateTaskStatus(id: number, status: TaskStatus): Promise<Task> {
+    const task = await this.getTask(id);
+    if (!task) {
+      throw new NotFoundException(`Task with ID "${id}" not found`);
+    }
+
+    task.status = status;
+    await task.save();
+
+    return task;
   }
 }
