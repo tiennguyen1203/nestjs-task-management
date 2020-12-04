@@ -1,10 +1,12 @@
+import { UserRepository } from './../auth/user.repository';
 import { GetTasksFilterDto } from './dto/get-tasks-filter.dto';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { TaskStatus } from './task-status.enum';
 import { Task } from './task.entity';
 import { TaskRepository } from './task.repository';
+import { SelectQueryBuilder } from 'typeorm';
 
 @Injectable()
 export class TasksService {
@@ -14,7 +16,16 @@ export class TasksService {
   ) { }
 
   getTasks(taskFilterDto: GetTasksFilterDto): Promise<Array<Task>> {
-    return this.taskRepository.getTasks(taskFilterDto);
+    const query: SelectQueryBuilder<Task> = this.taskRepository.getTasks();
+    const { status, search } = taskFilterDto;
+    if (status) {
+      query.andWhere('task.status = :status', { status });
+    }
+    if (search) {
+      query.andWhere('(task.title ILIKE :search OR task.description ILIKE :search)', { search: `%${search}%` });
+    }
+
+    return query.getMany();
   }
 
   getTask(id: number): Promise<Task> {
@@ -29,7 +40,15 @@ export class TasksService {
     return this.taskRepository.deleteTask(id);
   }
 
-  updateTaskStatus(id: number, status: TaskStatus): Promise<Task> {
-    return this.taskRepository.updateTaskStatus(id, status);
+  async updateTaskStatus(id: number, status: TaskStatus): Promise<Task> {
+    const task = await this.taskRepository.getTask(id);
+    if (!task) {
+      throw new NotFoundException(`Task with ID "${id}" not found`);
+    }
+
+    task.status = status;
+    await task.save();
+
+    return task;
   }
 }
