@@ -7,6 +7,7 @@ import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 
 import * as dotenv from 'dotenv';
+import { JwtStrategy } from './jwt.strategy';
 dotenv.config();
 
 const jwtConfig: JwtModuleOptions = {
@@ -22,6 +23,13 @@ const jwtConfig: JwtModuleOptions = {
     TypeOrmModule.forFeature([UserRepository])
   ],
   controllers: [AuthController],
-  providers: [AuthService]
+  providers: [
+    AuthService,
+    JwtStrategy
+  ],
+  // exports: [
+  //   JwtStrategy,
+  //   PassportModule
+  // ]
 })
 export class AuthModule { }
