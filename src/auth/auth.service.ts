@@ -1,9 +1,10 @@
+import { UserResult } from './dto/user-result.interface';
 import { User } from './user.entity';
 import { AuthCredentialsDto } from './dto/auth-credentials.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserRepository } from './user.repository';
-import { BadRequestException, ConflictException, Injectable, InternalServerErrorException } from '@nestjs/common';
-import { QueryFailedError } from 'typeorm';
+import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
@@ -12,18 +13,19 @@ export class AuthService {
     private userRepository: UserRepository
   ) { }
 
-  async signUp(authCredentialsDto: AuthCredentialsDto): Promise<{ success: boolean }> {
+  async signUp(authCredentialsDto: AuthCredentialsDto): Promise<UserResult> {
     const { username, password } = authCredentialsDto;
 
     const user: User = new User();
-
     user.username = username;
-    user.password = password;
+    user.salt = await this.userRepository.genSalt();
+    user.password = await this.userRepository.hashPassword(password, user.salt);;
 
     try {
       await user.save();
       return {
-        success: true
+        id: user.id,
+        username: user.username
       }
     } catch (error) {
       if (error.code === '23505') {
@@ -32,5 +34,25 @@ export class AuthService {
 
       throw new InternalServerErrorException();
     }
+  }
+
+  async signIn(authCredentialsDto: AuthCredentialsDto): Promise<UserResult> {
+    const { username, password } = authCredentialsDto;
+
+    const user = await this.userRepository.findOne({ username });
+
+    if (!user) {
+      throw new UnauthorizedException('Username or password is incorrect');
+    }
+
+    const correctPassword = await user.validatePassword(password);
+    if (!correctPassword) {
+      throw new UnauthorizedException('Username or password is incorrect');
+    };
+
+    return {
+      id: user.id,
+      username: user.username
+    };
   }
 }
