@@ -27,9 +27,9 @@ const jwtConfig: JwtModuleOptions = {
     AuthService,
     JwtStrategy
   ],
-  // exports: [
-  //   JwtStrategy,
-  //   PassportModule
-  // ]
+  exports: [
+    //   JwtStrategy,
+    PassportModule
+  ]
 })
 export class AuthModule { }
