@@ -45,15 +45,15 @@ export class AuthService {
   }
 
   async signIn(authCredentialsDto: AuthCredentialsDto): Promise<IUserResult> {
-    const { username, password } = authCredentialsDto;
+    const { username, password }: AuthCredentialsDto = authCredentialsDto;
 
-    const user = await this.userRepository.findOne({ username });
+    const user: User = await this.userRepository.findOne({ username });
 
     if (!user) {
       throw new UnauthorizedException('Username or password is incorrect');
     }
 
-    const correctPassword = await user.validatePassword(password);
+    const correctPassword: boolean = await user.validatePassword(password);
     if (!correctPassword) {
       throw new UnauthorizedException('Username or password is incorrect');
     };

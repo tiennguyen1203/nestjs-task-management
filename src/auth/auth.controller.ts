@@ -1,9 +1,10 @@
-import { IUserResult } from './interface/auth.interface';
-import { AuthCredentialsDto } from './dto/auth-credentials.dto';
+import { Body, Controller, Post, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { Body, Controller, Post, Req, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport'
-import { IncomingMessage } from 'http';
+import { AuthCredentialsDto } from './dto/auth-credentials.dto';
+import { GetUser } from './get-user.decorator';
+import { IUserResult } from './interface/auth.interface';
+import { AuthGuardOptional } from './guard/auth.guard.optional';
+import { User } from './user.entity';
 
 @Controller('auth')
 export class AuthController {
@@ -20,8 +21,8 @@ export class AuthController {
   }
 
   @Post('/test')
-  @UseGuards(AuthGuard())
-  test(@Req() req) {
-    console.log(req.user);
+  @UseGuards(AuthGuardOptional)
+  test(@GetUser() user: User) {
+    console.log(user);
   }
 }

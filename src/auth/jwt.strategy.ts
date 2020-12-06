@@ -1,15 +1,14 @@
+import { Injectable } from '@nestjs/common';
+import { PassportStrategy } from '@nestjs/passport';
+import { InjectRepository } from '@nestjs/typeorm';
+import * as dotenv from 'dotenv';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import { IJwtPayload } from './interface/auth.interface';
 import { User } from './user.entity';
 import { UserRepository } from './user.repository';
-import { IJwtPayload } from './interface/auth.interface';
 
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { PassportStrategy } from '@nestjs/passport';
-import { Strategy, ExtractJwt } from 'passport-jwt';
-import * as dotenv from 'dotenv';
-import { InjectRepository } from '@nestjs/typeorm';
 dotenv.config();
 
-console.log(process.env.JWT_SECRET)
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
@@ -26,10 +25,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const { id } = payload;
 
     const user: User = await this.userRepository.findOne({ id });
-    if (!user) {
-      throw new UnauthorizedException('Username or password is incorrect');
-    }
-    console.log('that\'s right ?');
+    // if (!user) {
+    //   throw new UnauthorizedException('Username or password is incorrect');
+    // }
 
     return user;
   }
