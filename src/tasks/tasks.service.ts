@@ -54,14 +54,14 @@ export class TasksService {
     return this.taskRepository.createTask(createTaskDto, user);
   }
 
-  deleteTask(id: number): Promise<number> {
-    return this.taskRepository.deleteTask(id);
+  deleteTask(id: number, user: User): Promise<number> {
+    return this.taskRepository.deleteTask(id, user);
   }
 
   async updateTaskStatus(
     { id, user, status }: TUpdateTaskStatus
-  ): Promise<any> {
-    const task = await this.taskRepository.getTask(id, user);
+  ): Promise<Task> {
+    const task: Task = await this.taskRepository.getTask(id, user);
     if (!task) {
       throw new NotFoundException(`Task with ID "${id}" not found`);
     }
