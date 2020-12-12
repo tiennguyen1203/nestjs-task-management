@@ -18,12 +18,10 @@ export class AuthService {
 
     const user: User = new User();
     user.username = username;
-    user.salt = await this.userRepository.genSalt();
-    user.password = await this.userRepository.hashPassword(password, user.salt);;
+    user.password = await this.userRepository.hashPassword(password);
 
     try {
       await user.save();
-
       const jwtPayload: IJwtPayload = {
         id: user.id,
         username: user.username
@@ -44,16 +42,19 @@ export class AuthService {
     }
   }
 
-  async signIn(authCredentialsDto: AuthCredentialsDto): Promise<IUserResult> {
+  async signIn(authCredentialsDto: AuthCredentialsDto): Promise<any> {
     const { username, password }: AuthCredentialsDto = authCredentialsDto;
 
-    const user: User = await this.userRepository.findOne({ username });
+    const user: User = await this.userRepository.createQueryBuilder('user')
+      .where({ username })
+      .addSelect('user.password')
+      .getOne();
 
     if (!user) {
       throw new UnauthorizedException('Username or password is incorrect');
     }
 
-    const correctPassword: boolean = await user.validatePassword(password);
+    const correctPassword: boolean = await this.userRepository.compare(password, user.password);
     if (!correctPassword) {
       throw new UnauthorizedException('Username or password is incorrect');
     };
@@ -62,12 +63,13 @@ export class AuthService {
       id: user.id,
       username: user.username
     };
-    const accessToken: string = this.jwtService.sign(jwtPayload);
+    const accessToken: string = await this.jwtService.sign(jwtPayload);
 
+    delete user.password;
     return {
-      id: user.id,
-      username: user.username,
-      accessToken
+      ...user,
+      accessToken,
     };
+
   }
 }

@@ -7,4 +7,7 @@ db:
   database: 'database'
 
 jwt:
-  expiresIn: 3 * 24 * 3600
+  expiresIn: 3600000
+
+password:
+  saltRounds: 5
