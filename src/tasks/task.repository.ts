@@ -1,7 +1,7 @@
-import { NotFoundException } from '@nestjs/common';
-import { DeleteResult, EntityRepository, FindManyOptions, Repository, SelectQueryBuilder } from "typeorm";
+import { Brackets, EntityRepository, FindManyOptions, Repository, SelectQueryBuilder } from "typeorm";
 import { User } from './../auth/user.entity';
 import { CreateTaskDto } from './dto/create-task.dto';
+import { GetTasksFilterDto } from './dto/get-tasks-filter.dto';
 import { TaskStatus } from './task-status.enum';
 import { Task } from './task.entity';
 
@@ -27,26 +27,20 @@ export class TaskRepository extends Repository<Task> {
     return newTask.save();
   }
 
-  getTasks(userId: number): SelectQueryBuilder<Task> {
-    return this.createQueryBuilder('task').where({ userId });
-  }
+  getTasks(taskFilterDto: GetTasksFilterDto, userId: number): Promise<Task[]> {
+    const taskQueryBuilder: SelectQueryBuilder<Task> = this.createQueryBuilder('task').where({ userId });
 
-  async getTask(id: number, user: User): Promise<Task> {
-    const task: Task = await this.findOne({ id, userId: user.id });
-
-    if (!task) {
-      throw new NotFoundException(`Task with ID "${id}" not found`);
+    const { status, search } = taskFilterDto;
+    if (status) {
+      taskQueryBuilder.andWhere(`task.status = :status`, { status });
     }
 
-    return task;
-  }
-
-  async deleteTask(id: number, user: User): Promise<number> {
-    const deletedTask: DeleteResult = await this.delete({ id, userId: user.id });
-    if (!deletedTask.affected) {
-      throw new NotFoundException(`Task with ID "${id}" not found`);
+    if (search) {
+      taskQueryBuilder.andWhere(new Brackets(qb => {
+        qb.where(`task.title LIKE :search OR task.description LIKE :search`, { search: `%${search}%` })
+      }))
     }
 
-    return id;
+    return taskQueryBuilder.getMany();
   }
 }
